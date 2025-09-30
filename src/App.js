@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 
 function App() {
@@ -55,6 +55,15 @@ function App() {
     return newErrors.length === 0;
   };
 
+
+  // Cargar usuarios desde backend al montar
+  useEffect(() => {
+    fetch("http://localhost:5000/usuarios")
+      .then((res) => res.json())
+      .then((data) => setUsuarios(data))
+      .catch(() => setUsuarios([]));
+  }, []);
+
   // Guardar
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -62,32 +71,74 @@ function App() {
     if (!validateForm()) return;
 
     if (editIndex !== null) {
-      const updatedUsuarios = [...usuarios];
-      updatedUsuarios[editIndex] = form;
-      setUsuarios(updatedUsuarios);
-      setEditIndex(null);
+      // Actualizar usuario existente
+      const usuarioEdit = usuarios[editIndex];
+      fetch(`http://localhost:5000/usuarios/${usuarioEdit.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
+        .then((res) => res.json())
+        .then(() => {
+          const updatedUsuarios = [...usuarios];
+          updatedUsuarios[editIndex] = { ...form, id: usuarioEdit.id };
+          setUsuarios(updatedUsuarios);
+          setEditIndex(null);
+          setForm({
+            dni: "",
+            nombres: "",
+            apellidos: "",
+            fechaNacimiento: "",
+            genero: "",
+            ciudad: "",
+          });
+          setErrors([]);
+        })
+        .catch(() => setErrors(["Error al actualizar en el servidor"]));
     } else {
-      setUsuarios([...usuarios, form]);
+      // Crear nuevo usuario
+      fetch("http://localhost:5000/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
+        .then((res) => res.json())
+        .then((nuevo) => {
+          setUsuarios([...usuarios, { ...form, id: nuevo.id }]);
+          setForm({
+            dni: "",
+            nombres: "",
+            apellidos: "",
+            fechaNacimiento: "",
+            genero: "",
+            ciudad: "",
+          });
+          setErrors([]);
+        })
+        .catch(() => setErrors(["Error al guardar en el servidor"]));
     }
-
-    setForm({
-      dni: "",
-      nombres: "",
-      apellidos: "",
-      fechaNacimiento: "",
-      genero: "",
-      ciudad: "",
-    });
-    setErrors([]);
   };
 
+
   const handleEdit = (index) => {
-    setForm(usuarios[index]);
+    setForm({ ...usuarios[index] });
     setEditIndex(index);
   };
 
+
   const handleDelete = (index) => {
-    setUsuarios(usuarios.filter((_, i) => i !== index));
+    const usuario = usuarios[index];
+    fetch(`http://localhost:5000/usuarios/${usuario.id}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (res.ok) {
+          setUsuarios(usuarios.filter((_, i) => i !== index));
+        } else {
+          setErrors(["Error al eliminar en el servidor"]);
+        }
+      })
+      .catch(() => setErrors(["Error al eliminar en el servidor"]));
   };
 
   return (
