@@ -1,5 +1,4 @@
 import React from "react";
-
 function UserForm({ form, onChange, onSubmit, editMode }) {
   return (
     <form onSubmit={onSubmit} className="formulario">

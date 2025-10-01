@@ -102,3 +102,54 @@ h2 {
 .btn-delete:hover {
   background: #c82333;
 }
+
+.card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 10px 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: #fff;
+  max-width: 400px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.card p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.card b {
+  color: #555;
+}
+
+.card button {
+  padding: 5px 10px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.card button:hover {
+  opacity: 0.8;
+}
+
+.card button:first-of-type {
+  background-color: #4caf50;
+  color: white;
+}
+
+.card button:last-of-type {
+  background-color: #f44336;
+  color: white;
+}
+

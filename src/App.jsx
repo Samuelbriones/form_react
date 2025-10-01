@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import "./App.css";
 import UserForm from "./components/userForm";
 import UserList from "./components/userList";
 import ErrorAlert from "./components/alertError";
+import { validateForm } from "./services/validation";
 
 import {
   getUsuarios,
@@ -12,7 +12,6 @@ import {
 } from "./services/userService";
 
 function App() {
-  const [usuarios, setUsuarios] = useState([]);
   const [form, setForm] = useState({
     dni: "",
     nombres: "",
@@ -21,9 +20,12 @@ function App() {
     genero: "",
     ciudad: "",
   });
+
+  const [usuarios, setUsuarios] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
   const [errors, setErrors] = useState([]);
 
+  // Cargar datos desde el backend
   useEffect(() => {
     getUsuarios()
       .then((data) => setUsuarios(data))
@@ -31,68 +33,37 @@ function App() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-const validateForm = () => {
-  const newErrors = [];
-
-  if (!form.dni) {
-    newErrors.push("El DNI es obligatorio");
-  } else if (!/^[0-9]{8,10}$/.test(form.dni)) {
-    newErrors.push("El DNI debe ser numérico y tener entre 8 y 10 dígitos");
-  } else {
-    const dniDuplicado = usuarios.some((u, index) => {
-      if (editIndex !== null && index === editIndex) return false;
-      return u.dni === form.dni;
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
     });
-
-    if (dniDuplicado) {
-      newErrors.push("El DNI ya está registrado, debe ser único");
-    }
-  }
-
-  if (!form.nombres || form.nombres.length < 2) {
-    newErrors.push("El nombre debe tener al menos 2 caracteres");
-  }
-
-  if (!form.apellidos || form.apellidos.length < 2) {
-    newErrors.push("El apellido debe tener al menos 2 caracteres");
-  }
-
-  if (!form.fechaNacimiento) {
-    newErrors.push("Debe ingresar una fecha de nacimiento");
-  } else if (new Date(form.fechaNacimiento) > new Date()) {
-    newErrors.push("La fecha de nacimiento no puede ser futura");
-  }
-
-  if (!form.genero) {
-    newErrors.push("Debe seleccionar un género");
-  }
-  if (!form.ciudad) {
-    newErrors.push("Debe seleccionar una ciudad");
-  }
-
-  setErrors(newErrors);
-  return newErrors.length === 0;
-};
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+
+    const newErrors = validateForm(form, usuarios, editIndex);
+    if (newErrors.length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
     if (editIndex !== null) {
-      const usuarioEdit = usuarios[editIndex];
+      // actualizar en DB
       try {
+        const usuarioEdit = usuarios[editIndex];
         await updateUsuario(usuarioEdit.id, form);
+
         const updatedUsuarios = [...usuarios];
         updatedUsuarios[editIndex] = { ...form, id: usuarioEdit.id };
         setUsuarios(updatedUsuarios);
+
         resetForm();
       } catch {
         setErrors(["Error al actualizar en el servidor"]);
       }
     } else {
+      // registrar en DB
       try {
         const nuevo = await createUsuario(form);
         setUsuarios([...usuarios, { ...form, id: nuevo.id }]);
